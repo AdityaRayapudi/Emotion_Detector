@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_socketio import SocketIO, emit
+import eventlet
 import base64
 import os
 import numpy as np
@@ -12,9 +13,11 @@ from PIL import Image
 from EmotionDetection import NeuralNetwork, LabelMap
 
 #Initialize the Flask app
+eventlet.monkey_patch()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode="eventlet")
+
 
 # Initalize pytorch model
 model = NeuralNetwork()
