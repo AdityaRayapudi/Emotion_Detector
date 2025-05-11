@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <title>Emotion Detector</title>
+    <link rel="stylesheet" href="../static/css/main.css">
 
     <style>
      #video {
@@ -21,11 +22,27 @@
         <video autoplay playsinline id="videoElement"></video>
         <canvas id="canvas" width="400" height="300"></canvas>
     </div>
-    
+    <button id = "takePic" type="button" onclick="capturePicture()">Take Picutre</button>
+
+
     <div class= 'video'>
         <p>Proccessed Footage:</p>
         <img id="photo" width="400" height="300">
     </div>
+
+    <label for="fps">Frames Per Second</label>
+    <input type="number" name="fps" id="fps" value="60">
+
+    <div>
+      <p>Live Feed:</p>
+      <p>(*Live feed only works locally as it uses to much ram)</p>
+    </div>
+    
+
+    <label class="switch">
+      <input type="checkbox" id = "isLive" onclick = "toggleLive()">
+      <span class="slider round"></span>
+    </label>
 
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
@@ -39,34 +56,60 @@
         var canvas = document.getElementById("canvas");
         var context = canvas.getContext("2d");
         const video = document.querySelector("#videoElement");
-        const photo = document.getElementById("photo")
+        const photo = document.getElementById("photo");
+
+        const takePic = document.getElementById("takePic");
+        const isLiveCheckbox = document.getElementById("isLive")
+        const fps = document.getElementById("fps")
 
         video.width = 400;
         video.height = 300;
+        let drawInterval;
 
         if (navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices
-            .getUserMedia({ video: true })
-            .then(function (stream) {
-            video.srcObject = stream;
-            video.play();
-            })
+              navigator.mediaDevices
+                  .getUserMedia({ video: true })
+                  .then(function (stream) {
+                  video.srcObject = stream;
+                  video.play();
+                  })
         }
 
-        const FPS = 10;
-        setInterval(() => {
-            width = video.width;
-            height = video.height;
+        function toggleLive(){
+          if(isLiveCheckbox.checked == false){
+            takePic.disabled = false;
+            clearInterval(drawInterval)
 
-            context.drawImage(video, 0, 0, width, height);
-            var data = canvas.toDataURL("image/jpeg", 0.5);
-            context.clearRect(0, 0, width, height);
-            socket.emit("image", data);
-        }, 1000 / FPS);
+          } else {
+            takePic.disabled = true;
+            
+            drawInterval = setInterval(() => {
+              width = video.width;
+              height = video.height;
+
+              context.drawImage(video, 0, 0, width, height);
+              var data = canvas.toDataURL("image/jpeg", 0.5);
+              context.clearRect(0, 0, width, height);
+              socket.emit("image", data);
+            }, 1000 / fps.value);
+          }
+        }
 
         socket.on("processed_image", function (image) {
           photo.setAttribute("src", image);
         });
+
+        function capturePicture(){
+          width = video.width;
+          height = video.height;
+
+
+          context.drawImage(video, 0, 0, width, height);
+          var data = canvas.toDataURL("image/jpeg", 0.5);
+          context.clearRect(0, 0, width, height);
+          socket.emit("image", data);
+        }
+
 
     </script>
   </body>
